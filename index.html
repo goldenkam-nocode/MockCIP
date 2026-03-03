@@ -9,7 +9,7 @@
   <body>
     <div id="root"></div>
     <script type="text/babel">
-      // const { useState, useEffect } = React;
+      const { useState, useEffect } = React;
 import { ChevronDown, ChevronUp, Users, User, FileText, AlertTriangle, DollarSign, Bell, BarChart2, GitBranch, Info, CheckCircle, Clock, Award, Settings, RefreshCw, Mail, Calendar } from 'lucide-react';
 
 const STAGES = [
@@ -416,7 +416,6 @@ function SupportingFeatures({ features }) {
   );
 }
 
-export default function CIPSystemFlow() {
   const [activeStage, setActiveStage] = useState('admission');
   const flow = FLOWS[activeStage];
   const stageMeta = STAGES.find(s => s.id === activeStage);
