@@ -1,0 +1,499 @@
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, Users, User, FileText, AlertTriangle, DollarSign, Bell, BarChart2, GitBranch, Info, CheckCircle, Clock, Award, Settings, RefreshCw, Mail, Calendar } from 'lucide-react';
+
+const STAGES = [
+  { id: 'admission', label: 'Admission Pt.2', color: 'blue' },
+  { id: 'onboarding', label: 'Onboarding', color: 'cyan' },
+  { id: 'milestone', label: 'Milestone', color: 'purple' },
+  { id: 'milestonePayment', label: 'Milestone Pay', color: 'green' },
+  { id: 'stageReview', label: 'Stage 1/2/3 Review', color: 'orange' },
+  { id: 'stagePayment', label: 'Stage 1/2/3 Pay', color: 'teal' },
+  { id: 'finalReview', label: 'Final Review', color: 'rose' },
+  { id: 'finalPayment', label: 'Final Payment', color: 'indigo' },
+  { id: 'completion', label: 'Completion', color: 'amber' },
+  { id: 'supporting', label: 'Supporting Features', color: 'slate' },
+];
+
+const COLOR_CLASSES = {
+  blue:   { tab:'bg-blue-600 text-white',   inact:'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50',   hdr:'bg-blue-600',   light:'bg-blue-50',   border:'border-blue-500',   text:'text-blue-700',   badge:'bg-blue-100 text-blue-800'   },
+  cyan:   { tab:'bg-cyan-600 text-white',   inact:'bg-white text-cyan-700 border border-cyan-200 hover:bg-cyan-50',   hdr:'bg-cyan-600',   light:'bg-cyan-50',   border:'border-cyan-500',   text:'text-cyan-700',   badge:'bg-cyan-100 text-cyan-800'   },
+  purple: { tab:'bg-purple-600 text-white', inact:'bg-white text-purple-700 border border-purple-200 hover:bg-purple-50', hdr:'bg-purple-600', light:'bg-purple-50', border:'border-purple-500', text:'text-purple-700', badge:'bg-purple-100 text-purple-800' },
+  green:  { tab:'bg-green-600 text-white',  inact:'bg-white text-green-700 border border-green-200 hover:bg-green-50',  hdr:'bg-green-600',  light:'bg-green-50',  border:'border-green-500',  text:'text-green-700',  badge:'bg-green-100 text-green-800'  },
+  orange: { tab:'bg-orange-600 text-white', inact:'bg-white text-orange-700 border border-orange-200 hover:bg-orange-50', hdr:'bg-orange-600', light:'bg-orange-50', border:'border-orange-500', text:'text-orange-700', badge:'bg-orange-100 text-orange-800' },
+  teal:   { tab:'bg-teal-600 text-white',   inact:'bg-white text-teal-700 border border-teal-200 hover:bg-teal-50',   hdr:'bg-teal-600',   light:'bg-teal-50',   border:'border-teal-500',   text:'text-teal-700',   badge:'bg-teal-100 text-teal-800'   },
+  rose:   { tab:'bg-rose-600 text-white',   inact:'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50',   hdr:'bg-rose-600',   light:'bg-rose-50',   border:'border-rose-500',   text:'text-rose-700',   badge:'bg-rose-100 text-rose-800'   },
+  indigo: { tab:'bg-indigo-600 text-white', inact:'bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50', hdr:'bg-indigo-600', light:'bg-indigo-50', border:'border-indigo-500', text:'text-indigo-700', badge:'bg-indigo-100 text-indigo-800' },
+  amber:  { tab:'bg-amber-600 text-white',  inact:'bg-white text-amber-700 border border-amber-200 hover:bg-amber-50',  hdr:'bg-amber-600',  light:'bg-amber-50',  border:'border-amber-500',  text:'text-amber-700',  badge:'bg-amber-100 text-amber-800'  },
+  slate:  { tab:'bg-slate-600 text-white',  inact:'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',  hdr:'bg-slate-600',  light:'bg-slate-50',  border:'border-slate-500',  text:'text-slate-700',  badge:'bg-slate-100 text-slate-800'  },
+};
+
+const FLOWS = {
+  admission: {
+    title: 'Admission Stage (Part 2)',
+    desc: 'CIP Team manages applicant data from EMS through reference checks, orientation, and agreement signing.',
+    steps: [
+      { num:'1', type:'process', title:'Data Extraction & Record Setup',
+        actors:{ internal:['CIP Team'], external:[] },
+        action:'Extract recommended applicants\' data from EMS. Create individual folders in SharePoint for each applicant.',
+        sysReq:'Centralised portal to save, view, search, and edit all applicant info (project name, company, CIP period, contact of Principal Applicant, team members, nationality, etc.). Supports data import from EMS.',
+        existing:'Excel + SharePoint', errorHandling:'Duplicates: System flags duplicate records automatically.', risk:'Lost info: Automated backup required.', docs:[] },
+      { num:'2', type:'process', title:'Notification to Recommended Applicants',
+        actors:{ internal:['CIP Team'], external:['Recommended Applicants'] },
+        action:'Send notification messages and attachments to recommended applicants to inform them and collect info for reference check.',
+        sysReq:'Bulk messaging system with attachment support. Delivery tracking and read-receipt. Data source: EMS.',
+        existing:'Email', errorHandling:'Non-response: Automated follow-up reminders.', risk:'-', docs:[] },
+      { num:'3', type:'process', title:'Document Submission (Reference Check)',
+        actors:{ internal:['CIP Team'], external:['Recommended Applicants'] },
+        action:'Applicants submit: Signed Acceptance Letter, Bank info form, Funding declaration, Company BR/CI/NNC1, ID copy, team nationality/education details.',
+        sysReq:'Online document submission portal. Staff view and download received documents. Re-submission supported for supplementary docs. Data retention: 2 years per policy.',
+        existing:'Email + SharePoint', errorHandling:'Incomplete submission: System notifies applicant to resubmit.', risk:'2-year data retention compliance required.', docs:['Signed Acceptance Letter','Bank Information Form','Declaration of Funding Status','Company BR / CI / NNC1','ID Copy + Address','Nationality & Education Info'] },
+      { num:'4', type:'decision', title:'Eligibility Check & Verification',
+        actors:{ internal:['CIP Team','Account Manager'], external:['Recommended Applicants'] },
+        action:'Staff review documents and mark eligibility checklist. Account Manager verifies. Result: Pass / Fail / Decline Offer.',
+        sysReq:'Checklist portal with tick-boxes for each eligibility criterion. Reversible workflow to return documents to applicant for resubmission. Account manager verification layer. Auto-extract pass/fail/decline lists to CIP contact list.',
+        existing:'Excel', errorHandling:'Fail: Escalate to SM. Decline offer: Applicant must still sign Acceptance Letter.', risk:'Escalation criteria must be defined clearly in system.',
+        decisions:[{label:'Pass Ref. Check',color:'green',note:'→ Proceed to Step 5'},{label:'Fail Ref. Check',color:'red',note:'Escalate to SM'},{label:'Decline Offer',color:'yellow',note:'Sign back Acceptance Letter'}] },
+      { num:'5', type:'process', title:'Orientation & Agreement Signing',
+        actors:{ internal:['CIP Team','HoE','CPMO'], external:['CIP Applicants'] },
+        action:'Send orientation invite, manage RSVP, arrange physical orientation session (venue booking, PPT update). Upload orientation materials to portal. CIP Agreement e-signed by Incubatees + CPMO.',
+        sysReq:'Invitation & RSVP management system. E-signature for CIP Incubatees + CPMO on CIP Agreement. Portal for PPT/materials upload and download. Attendance tracking and no-show escalation.',
+        existing:'Email + Hardcopies', errorHandling:'No-show: Escalate to senior management.', risk:'Prep gaps: Maintain template repository.', docs:['CIP Agreement (signed by Incubatees + CPMO)','Orientation PPT + Materials'] },
+      { num:'6', type:'process', title:'Internal CIP Agreement Processing (NP-CRF)',
+        actors:{ internal:['CIP Team','Acc. Manager','HoE','CPMO','Procurement Team'] },
+        action:'Prepare NP-CRF with auto-filled data → Acc. Manager endorses → HoE signs → CPMO signs → Procurement reviews & signs (≈2 weeks) → Finance pre-checks. Total: 3–4 weeks.',
+        sysReq:'Document automation for NP-CRF (pre-fill from CIP contact list). Sequential approval routing: Manager → HoE → CPMO → Procurement. SLA tracking per stage with deadline alerts. Digital handoff to Finance for pre-checks.',
+        existing:'Email + Hardcopies', errorHandling:'Rejection: Revise and resubmit at appropriate stage.', risk:'Sequencing delays: Define SLAs per party.', docs:['NP-CRF','EC Paper','EC Approval Email','Signed CIP Agreement'] },
+    ]
+  },
+  onboarding: {
+    title: 'Onboarding Process',
+    desc: 'Portal account setup, mentor matching, and EC Office room allocation for newly admitted CIP Incubatees.',
+    steps: [
+      { num:'7', type:'process', title:'iStartup Portal Account Creation & Mentor Matching',
+        actors:{ internal:['CIP Team','ICT Team'], external:['CIP Incubatees','Mentors'] },
+        action:'ICT Team creates iStartup Portal account per Incubatee. Account Manager matches each Incubatee with a mentor. Both parties must accept the pairing.',
+        sysReq:'Triggered notification to Incubatees to set up portal account. Mentor matching and pairing acceptance workflow. Mentorship activity log tracking.',
+        existing:'iStartup Portal', errorHandling:'Account creation failure: Raise IT support ticket.', risk:'-', docs:[] },
+      { num:'8', type:'process', title:'EC Office Room Allocation',
+        actors:{ internal:['CIP Team','JLL Team'], external:['CIP Incubatees'] },
+        action:'Rank Incubatees by vetting score → Send EC Office application email → Notify allocation result → E-sign Move-in Agreement → Record contract start/end dates, invoice/payment status, room number, utilisation rate.',
+        sysReq:'Email system with application link. E-signature for Move-in Agreement (Incubatee + HoE). Auto-generate outstanding payment report and utilisation report. Alert trigger if management fee is outstanding (funding suspension flag).',
+        existing:'Email + MS Forms', errorHandling:'-', risk:'Funding suspended if management fee outstanding.', docs:['Move-in Agreement (Incubatee + HoE signed)'] },
+    ]
+  },
+  milestone: {
+    title: 'Milestone Setting Stage',
+    desc: 'Incubatees submit and agree on milestones with account managers, requiring HoE & CPMO approval before finalisation.',
+    steps: [
+      { num:'9', type:'process', title:'Submit Milestone & Business Plan',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'After orientation, Incubatees submit their milestone plan and business plan via the portal.',
+        sysReq:'Online submission portal for milestone plan and business plan documents.',
+        existing:'Email', errorHandling:'Incomplete: System feedback to Incubatee for resubmission.', risk:'Mandatory confirmation email required after submission.', docs:['Milestone Plan','Business Plan'] },
+      { num:'10', type:'process', title:'Milestone Setting Meeting',
+        actors:{ internal:['CIP Team','Account Manager','HoE','CPMO'], external:['CIP Incubatees','Mentor'] },
+        action:'Meeting scheduler with time slot selection → Incubatee selects slot → Account Manager reviews milestones → Incubatee adjusts & resubmits → Both parties agree → HoE & CPMO approve → MANDATORY system confirmation email sent to Incubatee.',
+        sysReq:'Meeting scheduler with time slot selection tool. Calendar integration. Meeting invite system. Milestone storage in central DB. Mandatory system-generated confirmation email (must-have).',
+        existing:'Email', errorHandling:'No-show: Allow 1 reschedule maximum.', risk:'Inconsistencies: Central database required for all milestone records.', docs:['ENC.SF.080 Review Form (R4)','ENC.SF.085 Tiered Assessment Form (R1)','P&L Report Template','Business Plan Template V2','Bank Information Form'] },
+      { num:'11', type:'process', title:'Change of Milestones (If Required)',
+        actors:{ internal:['CIP Team','Account Manager','HoE'], external:['CIP Incubatees'] },
+        action:'Incubatee submits change request ≥4 months before stage end → Account Manager reviews → HoE bi-weekly batch approval → System notifies Incubatee of outcome.',
+        sysReq:'Change request submission portal. Automated deadline validation (≥4 months rule). Bi-weekly HoE approval batch workflow. Notification system for approval/rejection outcome.',
+        existing:'Email + Excel', errorHandling:'Late request (<4 months): System alert.', risk:'-', docs:['Change of Milestone Excel','HoE Approval Email','Notification Email to Incubatees'] },
+    ]
+  },
+  milestonePayment: {
+    title: 'Milestone Payment Processing',
+    desc: 'Multi-level approval chain for releasing milestone-based grant payments to Incubatees.',
+    steps: [
+      { num:'12', type:'process', title:'Milestone Payment Arrangement & Processing',
+        actors:{ internal:['CIP Team','HoE','CPMO','Finance Team','Asst. Accountant'] },
+        action:'CIP team prepares payment document bundle → HoE & CPMO endorse → Finance team processes → Document check → HoE & CPMO approve → Webpayment by SM/Head of Finance/CFO → Finance informs CIP team. Batch: 2 payments/month.',
+        sysReq:'Payment processing automation. Approval routing: CIP → HoE + CPMO → Finance → SM/CFO. Webpayment Excel generation. Payment tracking dashboard: grant status (Pending/Approved/Paid) with filters by intake/cohort. Outstanding submission alerts. Historical logs with timestamps.',
+        existing:'Email + Internal Payment Form + Excel', errorHandling:'Hold: Notify parties. Disputes: Full audit trail.', risk:'Self-view portal for payment status queries.', docs:['ENC.SF.080','ENC.SF.085 Tiered Assessment Form','P&L Report','Business Plan Template','Bank Information Form','Signed NP-CRF','Signed CIP Agreement','Webpayment Excel'] },
+    ]
+  },
+  stageReview: {
+    title: 'Stage 1/2/3 Review Meeting',
+    desc: 'Periodic progress review meetings with document automation, approval workflow, and special case handling.',
+    steps: [
+      { num:'13', type:'process', title:'Arrange Stage Review Meeting',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'Prepare rundown schedule → Send invitation emails (1 month before) → Handle reschedule requests → Incubatees confirm attendance via registration link → Chase non-submitters by email/phone.',
+        sysReq:'Meeting scheduler with pre-assigned time slots. Portal for Incubatees to confirm attendance or request reschedule. Automated submission deadline reminders and non-submitter chase alerts.',
+        existing:'Email + Google Form', errorHandling:'Reschedule: Staff revises schedule in system.', risk:'Missing tracking: Quarterly schedule audits.', docs:['Review Meeting Schedule Excel'] },
+      { num:'14', type:'process', title:'Prepare Review Documents',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'Incubatees input 6 months of monthly deliverables, awards, upload PPT + signature + supporting docs by deadline → CIP staff auto-generate Word/PDF report (Autocrat) → Send to Incubatees 1 week before meeting. Resubmission allowed for updates.',
+        sysReq:'Online form for monthly deliverables input (6 months). Auto-generate PDF review report pre-meeting. Download access for all parties. Incomplete report feedback. Deadline alert system. 1-day-before meeting auto-reminder.',
+        existing:'Email + MS Office + Teams + Google Form', errorHandling:'Incomplete/late: Alert with potential penalty. Version control enforced.', risk:'Vague deadlines: Specify submission formats and deadlines.', docs:['ENC.SF.080 Review Form (R4)','ENC.SF.085 Tiered Assessment Form (R1)','P&L Report','Business Plan Template V2'] },
+      { num:'15', type:'decision', title:'Post-Meeting: Report Acceptance',
+        actors:{ internal:['CIP Team','CIP Manager','HoE'], external:['CIP Incubatees'] },
+        action:'CIP team accepts OR rejects report. If rejected, workflow returns to Incubatee (max 2 loops). Manager + staff add comments on report. Bundle all docs to single PDF per Incubatee. Submit to HoE for endorsement.',
+        sysReq:'Reversible workflow to return report to Incubatee. Comment input on portal. Auto-generate combined PDF (report + comments + docs). HoE endorsement submission via system.',
+        existing:'MS Office', errorHandling:'Rejection loop: Maximum 2 times, then escalate.',  risk:'Define clear accept/reject branching paths.',
+        decisions:[{label:'Accepted → Proceed to Payment',color:'green',note:'→ Step 17'},{label:'Rejected (max 2x)',color:'red',note:'Workflow returns to Incubatee'}] },
+      { num:'16', type:'decision', title:'Special Case Handling',
+        actors:{ internal:['CIP Team','HoE','CPMO','Finance Team'], external:['CIP Incubatees'] },
+        action:'Case A: Failed milestone → Hold payment → Monitor progress → If later achieved, management reviews → Release payment. Case B: Withdrawal → No meeting → Sign withdrawal form. Case C: Termination → Failed 70%+ of milestones for consecutive stage. Notify for Auditor\'s report.',
+        sysReq:'Payment hold/release workflow. Withdrawal form digital signing. Termination tracking and status update. Email trigger for Auditor\'s report submission. Portal to track review progress and payment status end-to-end.',
+        existing:'Email + Excel', errorHandling:'Repeated fail: System triggers termination alert.', risk:'Define and document all branching scenarios.',
+        decisions:[{label:'Milestone Achieved Later',color:'green',note:'CIP Mgmt review → Release payment'},{label:'Withdrawal',color:'yellow',note:'Sign withdrawal form; no meeting held'},{label:'Termination',color:'red',note:'Failed ≥70% milestone (consecutive stage)'}] },
+    ]
+  },
+  stagePayment: {
+    title: 'Stage 1/2/3 Payment Processing',
+    desc: 'Grant payment disbursement following successful stage review, with Incubatee notification and record update.',
+    steps: [
+      { num:'17', type:'process', title:'Stage Review Grant Payment Processing',
+        actors:{ internal:['CIP Team','Asst. Accountant','HoE','CPMO','Finance Team'] },
+        action:'CIP submits review report bundle → HoE & CPMO approve → Finance processes → Webpayment by SM/Head of Finance/CFO → Finance informs CIP team. Batches: 2 per month.',
+        sysReq:'Payment tracking dashboard (Pending/Approved/Paid) with filters by intake/cohort. Outstanding submission alerts. Historical logs with approval timestamps. Batch payment logic.',
+        existing:'Email + Finance payment system', errorHandling:'Delay: Send automated chase. Disputes: Audit trail.', risk:'Self-view portal for payment status queries.', docs:['Review report + docs (single PDF per Incubatee)','HoE & CPMO approval emails','Webpayment Excel'] },
+      { num:'18', type:'process', title:'Notify Incubatees of Payment Release',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'CIP team informs Incubatees once payment arranged. Updates internal grant payment status records. Processing time: ~3–4 weeks. 2 batches/month.',
+        sysReq:'Automated notification to Incubatees upon payment release. Auto-generate post-meeting PDF review report (with CIP staff comments) for Incubatee download. Auto-update payment tracking records.',
+        existing:'Email + Excel', errorHandling:'Delay: Automated chase notification.', risk:'Self-view portal for Incubatees to track own payment status.', docs:['Updated Grant Payment Status Record'] },
+    ]
+  },
+  finalReview: {
+    title: 'Final Review Stage',
+    desc: 'Final review meeting with same flow as Stage 1/2/3, plus Auditor\'s Report requirement. Outcome determines graduation.',
+    steps: [
+      { num:'19', type:'process', title:'Arrange Final Review Meeting',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'Same process as Stage 1/2/3 review meeting arrangement. Rundown schedule, invitations (1 month before), reschedule handling, attendance confirmation, non-submitter chasing.',
+        sysReq:'Same as Stage 1/2/3: Meeting scheduler, Incubatee confirmation/reschedule portal, automated deadline and chase alerts.',
+        existing:'Email + Google Form', errorHandling:'Reschedule: Revise schedule in system.', risk:'Same as Stage 1/2/3.', docs:[] },
+      { num:'20', type:'process', title:'Prepare Documents for Final Review',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'Same as Stage 1/2/3. Additional required documents: Cybersecurity Level 1 certificate, Cybersecurity Level 2 report, Independent Auditor\'s Report and Statement of Expenditure.',
+        sysReq:'Same system as Stage 1/2/3 prep, with additional upload slots for Cybersecurity certificates and Auditor\'s Report.',
+        existing:'Email + MS Office', errorHandling:'Incomplete/late: Alert and chase.', risk:'Same as Stage 1/2/3.', docs:['ENC.SF.080 (R4)','ENC.SF.085 Tiered Assessment','P&L Report','Business Plan Template V2','Cybersecurity Level 1 Certificate','Cybersecurity Level 2 Report','Independent Auditor\'s Report & Statement of Expenditure'] },
+      { num:'21', type:'decision', title:'Post-Meeting: Final Report Acceptance',
+        actors:{ internal:['CIP Team','CIP Manager','HoE'], external:['CIP Incubatees'] },
+        action:'CIP team accepts or rejects report (max 2 loops). Manager + staff add comments. Bundle all docs to PDF. Submit to HoE. Accepted → Graduate. Failed Stage 4 milestone → Fail to graduate.',
+        sysReq:'Same workflow reversal system as Stage 1/2/3. Graduation status update field in system.',
+        existing:'MS Office', errorHandling:'Rejection loop: Max 2 times.', risk:'Fail-to-graduate path must be clearly tracked.',
+        decisions:[{label:'Accepted → Graduate',color:'green',note:'→ Proceed to Final Payment'},{label:'Failed Stage 4',color:'red',note:'Fail to graduate; escalate to HoE'}] },
+      { num:'22', type:'process', title:'Final Special Case & Auditor\'s Report Request',
+        actors:{ internal:['CIP Team','HoE'], external:['CIP Incubatees'] },
+        action:'Handle fail-to-graduate scenario. Bundle all docs to single PDF per Incubatee. Submit to HoE for endorsement. Send email to Incubatee requesting submission of Independent Auditor\'s Report.',
+        sysReq:'Email trigger for Auditor\'s Report request. Graduation/fail status field in system. HoE endorsement submission workflow.',
+        existing:'Email', errorHandling:'Repeated fail: Programme termination.', risk:'Graduation/fail outcome must be clearly tracked.', docs:['Same as Step 20 documents'] },
+    ]
+  },
+  finalPayment: {
+    title: 'Final Stage Payment Processing',
+    desc: 'Final grant payment disbursement after successful final review, completing the Incubatee\'s funding cycle.',
+    steps: [
+      { num:'23', type:'process', title:'Final Grant Payment Processing',
+        actors:{ internal:['CIP Team','Asst. Accountant','HoE','CPMO','Finance Team'] },
+        action:'Same payment flow as Stage 1/2/3. Additional documents include Auditor\'s Report and Cybersecurity records. Submit to HoE & CPMO → Finance → Webpayment → Finance informs CIP.',
+        sysReq:'Same payment tracking dashboard. Document bundle includes Auditor\'s Report and Cybersecurity Level 1/2 records.',
+        existing:'Email + Finance payment system', errorHandling:'Delay: Chase. Disputes: Audit trail.', risk:'Self-view portal for payment status.', docs:['Review report bundle (single PDF per Incubatee)','HoE & CPMO endorsement emails','Independent Auditor\'s Report','Cybersecurity Level 1 & Level 2 Records','Webpayment Excel'] },
+      { num:'24', type:'process', title:'Notify Incubatees of Final Payment',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees'] },
+        action:'CIP team informs Incubatees of final payment. Update grant payment status records. Processing time: ~3–4 weeks.',
+        sysReq:'Automated final payment notification to Incubatees. Auto-generate final PDF report with post-meeting comments. Update payment tracking records.',
+        existing:'Email + Excel', errorHandling:'Delay: Chase notification.', risk:'Self-view portal.', docs:[] },
+    ]
+  },
+  completion: {
+    title: 'Programme Completion Stage',
+    desc: 'Graduation certificate issuance and ongoing alumni management, reporting, and lifecycle tracking.',
+    steps: [
+      { num:'25', type:'process', title:'Graduation Certificate Issuance',
+        actors:{ internal:['CIP Team'], external:['CIP Incubatees (Alumni)'] },
+        action:'CIP staff issue graduation certificate and graduation letter to successfully graduated Incubatees.',
+        sysReq:'Automated graduation document generation and electronic distribution portal.',
+        existing:'Manual hardcopy print + email', errorHandling:'-', risk:'-', docs:['Graduation Certificate','Graduation Letter'] },
+      { num:'26', type:'process', title:'Post-Graduate & Alumni Management',
+        actors:{ internal:['CIP Team','SS Team','Alumni Team','JLL Team','Leasing Team'], external:['CIP Alumni'] },
+        action:'Government/management reporting (Monthly Facts & Figures, graduate counts, intake conversions, inactive tracking). Track alumni: catch-up sessions, mentorship referrals, achievements, events, awards, investment pitching, MDSS advisory, post-grad updates.',
+        sysReq:'Portal for monthly report generation and analysis. Alumni activity tracking (engagements, mentorship referrals, achievements). Holistic Incubatee lifecycle view. Management reporting dashboards.',
+        existing:'Excel + Email', errorHandling:'-', risk:'Missing tracking: Conduct quarterly database audits.', docs:[] },
+    ]
+  },
+  supporting: {
+    title: 'Supporting & Cross-Functional Features',
+    desc: 'System capabilities spanning the entire CIP programme lifecycle to support operations, reporting, and engagement.',
+    features: [
+      { icon:'📊', title:'Statistics & Reports', sysReq:'Dashboard with pre-defined report templates; CSV/Excel export; multi-entry filtering.',
+        items:['CIP application & admission analytics (intake no., shortlisted, admitted, graduation rates)','Grant payment & reimbursement summary reports (by date, intake, project, amount, status)','Monthly Facts and Figures (CCMF, CIP programme stats, startup achievements)','Annual Survey: Incubatee/alumni input portal; auto-update CIP database; report auto-generation'] },
+      { icon:'🏢', title:'Company Information Updates', sysReq:'External/internal request portal; auto-timestamp requests/approvals; supporting docs attached; account manager approval required.',
+        items:['Company name, organisational structure, shareholders, principal applicant changes','Profile, awards, funding status, overseas expansion, address, contact updates','Bank information, business deals, staff count, contributions to Cyberport','Account ownership: team, account manager, support team members'] },
+      { icon:'👥', title:'User Registration', sysReq:'PDF registration form with T&C; digital signature; HoE + CPMO approval workflow.',
+        items:['Mentors','ECAGs (Entrepreneurship Consultants & Advisory Group)','Partners','Cyberport Global Ambassadors'] },
+      { icon:'✉️', title:'Invitation / Call for Interest', sysReq:'Flexible invitation template system; response tracking; calendar scheduling; confirmation workflow.',
+        items:['Delegations, exhibitions, Cyberport events','Solution provider invitations','Speaker invitations for visits','Competition and award invitations'] },
+      { icon:'🔗', title:'Business & Investor Matching', sysReq:'Record matching requests with date/dept/users; generate results in CSV/Excel/PDF; email notifications; follow-up status reports.',
+        items:['Investor matching','Business matching','Mentor matching','PR matching'] },
+      { icon:'🔔', title:'Auto Reminders & Alerts', sysReq:'Setup recurring reminders saved as regular DB queries; distribute to selected dashboard users.',
+        items:['Review meeting reminders to Incubatees','Total disbursement alerts to management','Event reminders for Mentors','Custom alert triggers (flexible setup)'] },
+      { icon:'📅', title:'Events Management', sysReq:'Template-based invitation system; RSVP tracking; calendar integration; automated promotional emails.',
+        items:['Activity RSVP and event details','Media links and workshop RSVP','Automated promotional email campaigns','Schedule arrangement with calendar integration'] },
+      { icon:'🚀', title:'Product Adoptions Tracking', sysReq:'Status tracking (exploring/interested/successful); startup and solution tagging; budget, location, and impact tracking.',
+        items:['Adoption status (exploring / interested / successful)','Involved startups and solutions','Budget and testing location tracking','Technical settings and impact measurement'] },
+      { icon:'💰', title:'Funding Applications (CASP / MDSS)', sysReq:'Forward data/workflow to MDSS/CASP; budgeting tools; Government IT Fund status tracking.',
+        items:['CASP & MDSS system workflow integration','Cyberport funding applications and reimbursements','Total funding disbursed per Incubatee (sorted by period)','Government Innovation Technology Fund status (PSTS, TechTas, RTH, etc.)'] },
+      { icon:'📰', title:'Media Records & Social Listening', sysReq:'News grouping by company; link storage for published media; court case alert integration.',
+        items:['Social listening and company news grouping','Published interviews / articles / videos (links)','General social listening for Incubatees / projects','Court case search and alert'] },
+      { icon:'🖥️', title:'iStartUP Public Platform', sysReq:'Auto-generate from existing CIP database. Public-facing company directories and mentorship logs.',
+        items:['Public company directory: Incubatees / Alumni / Community companies','Mentor profiles and mentorship arrangement log','Profile search and filtering by sector/cluster','REF: istartup.hk/en/startups'] },
+      { icon:'📝', title:'Engagement History', sysReq:'Engagement log per person/company; searchable and filterable by activity, date, personnel.',
+        items:['Engagement activity name and type','Date and personnel involved','Linked to Incubatee/alumni profile','Full engagement history view per contact'] },
+    ]
+  }
+};
+
+function ActorBadge({ label, isExternal }) {
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isExternal ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
+      {isExternal ? <User size={10} /> : <Users size={10} />}
+      {label}
+    </span>
+  );
+}
+
+function DecisionNode({ decisions }) {
+  const colorMap = {
+    green: 'bg-green-50 border-green-400 text-green-800',
+    red: 'bg-red-50 border-red-400 text-red-800',
+    yellow: 'bg-yellow-50 border-yellow-400 text-yellow-800',
+    blue: 'bg-blue-50 border-blue-400 text-blue-800',
+  };
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-200">
+      <div className="flex items-center gap-1 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <GitBranch size={12} /> Decision Paths
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {decisions.map((d, i) => (
+          <div key={i} className={`flex-1 min-w-32 border rounded-lg px-3 py-2 text-xs font-medium ${colorMap[d.color] || colorMap.blue}`}>
+            <div className="font-semibold">{d.label}</div>
+            {d.note && <div className="font-normal opacity-75 mt-0.5">{d.note}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepCard({ step, color, stepIndex, totalSteps }) {
+  const [open, setOpen] = useState(false);
+  const c = COLOR_CLASSES[color];
+  const isDecision = step.type === 'decision';
+  return (
+    <div className="relative">
+      <div className={`rounded-xl border-2 ${isDecision ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white'} shadow-sm overflow-hidden`}>
+        <button
+          onClick={() => setOpen(p => !p)}
+          className="w-full text-left"
+        >
+          <div className="flex items-start gap-3 p-4">
+            <div className={`flex-shrink-0 w-8 h-8 rounded-full ${isDecision ? 'bg-amber-500' : c.hdr} text-white text-sm font-bold flex items-center justify-center`}>
+              {step.num}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-gray-900 text-sm">{step.title}</span>
+                {isDecision && (
+                  <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                    <GitBranch size={10} /> Decision
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {step.actors.internal?.map((a, i) => <ActorBadge key={i} label={a} isExternal={false} />)}
+                {step.actors.external?.map((a, i) => <ActorBadge key={i} label={a} isExternal={true} />)}
+              </div>
+              {!open && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{step.action}</p>}
+            </div>
+            <div className="flex-shrink-0 text-gray-400">
+              {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
+          </div>
+        </button>
+
+        {open && (
+          <div className="px-4 pb-4 border-t border-gray-100">
+            <div className="grid gap-3 mt-3">
+              <div>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1"><Info size={11}/> Action / Process</div>
+                <p className="text-sm text-gray-700 leading-relaxed">{step.action}</p>
+              </div>
+              <div className={`rounded-lg p-3 ${c.light} border ${c.border} border-opacity-50`}>
+                <div className={`text-xs font-semibold uppercase tracking-wide mb-1 flex items-center gap-1 ${c.text}`}><Settings size={11}/> System Requirement</div>
+                <p className="text-sm text-gray-700 leading-relaxed">{step.sysReq}</p>
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1"><Clock size={11}/> Existing Platform</div>
+                  <p className="text-sm text-gray-600">{step.existing}</p>
+                </div>
+                <div className="bg-red-50 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1 flex items-center gap-1"><AlertTriangle size={11}/> Error Handling</div>
+                  <p className="text-sm text-gray-600">{step.errorHandling}</p>
+                </div>
+              </div>
+              {step.risk && step.risk !== '-' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-yellow-700 uppercase tracking-wide mb-1">⚠ Risk / Mitigation</div>
+                  <p className="text-sm text-gray-700">{step.risk}</p>
+                </div>
+              )}
+              {step.docs && step.docs.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1"><FileText size={11}/> Related Documents</div>
+                  <div className="flex flex-wrap gap-1">
+                    {step.docs.map((d, i) => (
+                      <span key={i} className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-md">{d}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {step.decisions && <DecisionNode decisions={step.decisions} />}
+            </div>
+          </div>
+        )}
+      </div>
+      {stepIndex < totalSteps - 1 && (
+        <div className="flex justify-center my-1">
+          <div className="w-0.5 h-6 bg-gray-300"></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SupportingFeatures({ features }) {
+  const [openIdx, setOpenIdx] = useState(null);
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f, i) => (
+        <div key={i} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <button className="w-full text-left p-4" onClick={() => setOpenIdx(openIdx === i ? null : i)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{f.icon}</span>
+                <span className="font-semibold text-sm text-gray-900">{f.title}</span>
+              </div>
+              {openIdx === i ? <ChevronUp size={14} className="text-gray-400"/> : <ChevronDown size={14} className="text-gray-400"/>}
+            </div>
+          </button>
+          {openIdx === i && (
+            <div className="px-4 pb-4 border-t border-gray-100">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-3 mb-3">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1 flex items-center gap-1"><Settings size={10}/> System Requirement</div>
+                <p className="text-xs text-gray-700 leading-relaxed">{f.sysReq}</p>
+              </div>
+              <ul className="space-y-1">
+                {f.items.map((item, j) => (
+                  <li key={j} className="flex items-start gap-2 text-xs text-gray-600">
+                    <CheckCircle size={11} className="text-green-500 mt-0.5 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function CIPSystemFlow() {
+  const [activeStage, setActiveStage] = useState('admission');
+  const flow = FLOWS[activeStage];
+  const stageMeta = STAGES.find(s => s.id === activeStage);
+  const c = COLOR_CLASSES[stageMeta?.color || 'slate'];
+
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans">
+      {/* Header */}
+      <div className="bg-gray-900 text-white px-4 py-4 shadow-lg">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-xl font-bold tracking-tight">CIP System Flow</h1>
+          <p className="text-gray-400 text-xs mt-0.5">Cyberport Incubation Programme — System Architecture & Workflow Reference</p>
+          <div className="flex gap-3 mt-3 text-xs">
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block"></span> Internal Actor</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span> External Actor</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Decision Node</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stage Tabs */}
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 overflow-x-auto">
+          <div className="flex gap-1 py-2" style={{minWidth:'max-content'}}>
+            {STAGES.map(s => {
+              const sc = COLOR_CLASSES[s.color];
+              const isActive = activeStage === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveStage(s.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${isActive ? sc.tab : sc.inact}`}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Stage Header */}
+        <div className={`rounded-xl p-5 mb-6 text-white ${c.hdr} shadow-md`}>
+          <h2 className="text-lg font-bold">{flow.title}</h2>
+          <p className="text-sm opacity-90 mt-1 leading-relaxed">{flow.desc}</p>
+        </div>
+
+        {/* Supporting Features */}
+        {activeStage === 'supporting' && flow.features && (
+          <SupportingFeatures features={flow.features} />
+        )}
+
+        {/* Step Flow */}
+        {flow.steps && (
+          <div className="max-w-2xl mx-auto">
+            {/* Start node */}
+            <div className="flex justify-center mb-1">
+              <div className={`text-white text-xs font-bold px-4 py-1.5 rounded-full ${c.hdr} shadow`}>START</div>
+            </div>
+            <div className="flex justify-center mb-1">
+              <div className="w-0.5 h-4 bg-gray-300"></div>
+            </div>
+            {flow.steps.map((step, idx) => (
+              <StepCard
+                key={step.num}
+                step={step}
+                color={stageMeta.color}
+                stepIndex={idx}
+                totalSteps={flow.steps.length}
+              />
+            ))}
+            {/* End node */}
+            <div className="flex justify-center mt-1">
+              <div className="w-0.5 h-4 bg-gray-300"></div>
+            </div>
+            <div className="flex justify-center">
+              <div className={`text-white text-xs font-bold px-4 py-1.5 rounded-full ${c.hdr} shadow`}>END / NEXT STAGE</div>
+            </div>
+
+            {/* Expand tip */}
+            <p className="text-center text-xs text-gray-400 mt-6">
+              Click any step card to expand full details, system requirements, and related documents.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
